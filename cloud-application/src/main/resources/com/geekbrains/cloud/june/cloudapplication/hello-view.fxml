@@ -23,9 +23,15 @@
             </HBox>
             <TableView fx:id="clientView" VBox.vgrow="ALWAYS"/>
         </VBox>
-        <ListView fx:id="serverView" HBox.hgrow="ALWAYS" />
-    </HBox>
+        <VBox >
+            <HBox>
+                <TextField fx:id="pathFieldServer" editable="false" HBox.hgrow="ALWAYS"/>
+                <Button text="Up" onAction="#btnPathUpRequestServer"/>
+            </HBox>
+            <ListView fx:id="serverView" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"/>
+        </VBox>
 
+    </HBox>
 
     <HBox spacing="5.0">
         <Button maxWidth="Infinity" focusTraversable="false" text="ToServer" HBox.hgrow="ALWAYS" onAction="#upload"/>

@@ -1,9 +1,6 @@
 package com.geekbrains.cloud.june.cloudapplication;
 
-import com.geekbrains.cloud.CloudMessage;
-import com.geekbrains.cloud.FileMessage;
-import com.geekbrains.cloud.FileRequest;
-import com.geekbrains.cloud.ListFiles;
+import com.geekbrains.cloud.*;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -23,25 +20,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 
 public class ChatController implements Initializable {
-
-
     @FXML
     public ComboBox<String> disksBox;// выбор диска
     @FXML
     public TextField pathField; // прописка пути файла
+
     @FXML
     public TableView<FileInfo> clientView;// поле клиента
 
+    @FXML
+    public TextField pathFieldServer;
+
 
     private String homeDir;
+    private String server;
 
 
-   // public ListView<String> clientView;
+    // public ListView<String> clientView;
 
     @FXML
     //TableView<String> serverView;
@@ -53,11 +52,15 @@ public class ChatController implements Initializable {
         try {
             while (true) {
                 CloudMessage message = network.read();
+
                 if (message instanceof ListFiles listFiles) {
+                    System.out.println(listFiles);
                     Platform.runLater(() -> {
                         serverView.getItems().clear();
                         serverView.getItems().addAll(listFiles.getFiles());
+                        pathFieldServer.setText(listFiles.getPath());
                     });
+
                 } else if (message instanceof FileMessage fileMessage) {
                     Path current = Path.of(pathField.getText()).resolve(fileMessage.getName());
                     System.out.println(current);
@@ -127,14 +130,36 @@ public class ChatController implements Initializable {
         clientView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-                if(mouseEvent.getClickCount()==2) {
+                if (mouseEvent.getClickCount() == 2) {
                     Path path = Paths.get(pathField.getText()).resolve(clientView.getSelectionModel().getSelectedItem().getFilename());
-                    if(Files.isDirectory(path)){
+                    if (Files.isDirectory(path)) {
                         updateList(path);
                     }
                 }
             }
         });
+
+        serverView.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                if (mouseEvent.getClickCount() == 2) {
+
+                    try {
+                        String path = String.valueOf(Path.of(pathFieldServer.getText()).resolve(serverView.getSelectionModel().getSelectedItem()));
+                        if (Files.isDirectory(Path.of(path))) {
+                            System.out.println(path);
+                            network.write(new PathInRequest(path));
+                        }else {
+                            Alert alert = new Alert(Alert.AlertType.WARNING, "Открывать файлы еще не умеем", ButtonType.OK);
+                            alert.showAndWait();
+                        }
+                    } catch (IOException e) {
+                    e.printStackTrace();
+                    }
+                }
+            }
+        });
+
 
         updateList(Paths.get("."));
         try {
@@ -148,6 +173,7 @@ public class ChatController implements Initializable {
         }
 
     }
+
     public void updateList(Path path) {
         try {
             pathField.setText(path.normalize().toAbsolutePath().toString());
@@ -175,9 +201,8 @@ public class ChatController implements Initializable {
 
     public void upload(ActionEvent actionEvent) throws IOException {
         Path path = Paths.get(pathField.getText()).resolve(clientView.getSelectionModel().getSelectedItem().getFilename());
-
-
-        network.write(new FileMessage(Path.of("server_files").resolve(path)));
+        network.write(new ChangePathServerRequest(pathFieldServer.getText()));
+        network.write(new FileMessage(path));
     }
 
     public void download(ActionEvent actionEvent) throws IOException {
@@ -187,13 +212,25 @@ public class ChatController implements Initializable {
 
     public void selectDiskAction(ActionEvent actionEvent) {
     }
-// нажимаем на стрелку и у нас путь поднимается на один уровень вверх
+
+    // нажимаем на стрелку и у нас путь поднимается на один уровень вверх
     public void btnPathUpRequest(ActionEvent actionEvent) {
         Path upperPath = Paths.get(pathField.getText()).getParent();
-        if (upperPath !=null) {
+        if (upperPath != null) {
             updateList(upperPath);
         }
     }
+
+    public void btnPathUpRequestServer(ActionEvent actionEvent){
+        String path = String.valueOf(Path.of(pathFieldServer.getText()).getParent());
+        System.out.println(path);
+        try {
+            network.write(new PathUpRequest(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public void btnExitAction(ActionEvent actionEvent) {
         Platform.exit();
@@ -203,4 +240,6 @@ public class ChatController implements Initializable {
 
         return pathField.getSelectedText();
     }
+
+
 }
