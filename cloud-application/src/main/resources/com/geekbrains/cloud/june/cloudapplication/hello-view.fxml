@@ -8,13 +8,16 @@
 <VBox alignment="CENTER" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.geekbrains.cloud.june.cloudapplication.ChatController">
 
-    <MenuBar>
-        <Menu text="File">
-            <MenuItem text="Close"/>
-        </Menu>
-    </MenuBar>
-
+    <HBox fx:id="authPanel">
+        <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="login"/>
+        <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" promptText="password"/>
+        <Button text="auth" onAction="#tryToAuth"/>
+    </HBox>
     <HBox>
+        <TextField fx:id="nick" HBox.hgrow="ALWAYS" promptText="КЛИЕНТ" editable="false"/>
+    </HBox>
+
+    <HBox fx:id="cloudPanel" visible="false" managed = "false">
         <VBox>
             <HBox>
                 <ComboBox fx:id="disksBox" onAction="#selectDiskAction"/>
@@ -33,7 +36,7 @@
 
     </HBox>
 
-    <HBox spacing="5.0">
+    <HBox fx:id="btnPanel" spacing="5.0">
         <Button maxWidth="Infinity" focusTraversable="false" text="ToServer" HBox.hgrow="ALWAYS" onAction="#upload"/>
         <Button maxWidth="Infinity" focusTraversable="false" text="FromServer" HBox.hgrow="ALWAYS" onAction="#download"/>
         <Button maxWidth="Infinity" focusTraversable="false" text="Delete" HBox.hgrow="ALWAYS"/>

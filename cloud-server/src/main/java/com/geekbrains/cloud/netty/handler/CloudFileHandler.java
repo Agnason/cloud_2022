@@ -1,6 +1,7 @@
 package com.geekbrains.cloud.netty.handler;
 
 import com.geekbrains.cloud.*;
+import com.geekbrains.cloud.netty.CloudServer;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -20,11 +21,25 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+
         ctx.writeAndFlush(new ListFiles(serverStorage));
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, CloudMessage cloudMessage) throws Exception {
+        if (cloudMessage instanceof Authentification authentification) {
+            SimpleAuthService simpleAuthService=new SimpleAuthService();
+            String nickname = simpleAuthService
+                    .getNicknameByLoginAndPassword(authentification.login, authentification.password);
+            if( nickname !=null){
+                ctx.writeAndFlush(new Authentification(true));
+                ctx.writeAndFlush(new FileRequest(nickname));
+            }else {
+                ctx.writeAndFlush(new Authentification(false));
+            }
+
+        }
+
         // сигнал от сервера на загрузку файла с сервера на клиент
         if (cloudMessage instanceof FileRequest fileRequest) {
             ctx.writeAndFlush(new FileMessage(serverStorage.resolve(fileRequest.getName())));

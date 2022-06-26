@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,16 +35,42 @@ public class ChatController implements Initializable {
 
     @FXML
     public TextField pathFieldServer;
+    @FXML
+    public HBox authPanel;
+    @FXML
+    public TextField loginField;
+    @FXML
+    public PasswordField passwordField;
+    @FXML
+    public HBox cloudPanel;
+    @FXML
+    public HBox btnPanel;
+    @FXML
+    public TextField nick;
 
+    // флаг-авторизация. По умолчанияю false. Засунем в initialize
+    private String nickname;
+    private boolean authenticated;
 
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
+        authPanel.setVisible(!authenticated);
+        authPanel.setManaged(!authenticated);
+        cloudPanel.setVisible(authenticated);
+        cloudPanel.setManaged(authenticated);
+        btnPanel.setVisible(authenticated);
+        nick.setVisible(authenticated);
+//        if (!authenticated) {
+//            nickname = "";
+//        }
+    }
+
+    // флаг-авторизация
+
+    private AuthService authService;
     private String homeDir;
     private String server;
 
-
-    // public ListView<String> clientView;
-
-    @FXML
-    //TableView<String> serverView;
     public ListView<String> serverView;
 
     private Network network;
@@ -52,6 +79,16 @@ public class ChatController implements Initializable {
         try {
             while (true) {
                 CloudMessage message = network.read();
+
+                if (message instanceof Authentification authentification) {
+                    if (authentification.isFlag()) {
+                        setAuthenticated(true);
+                    }
+                }
+                if (message instanceof FileRequest fileRequest) {
+                    nick.setText(fileRequest.getName());
+                }
+
 
                 if (message instanceof ListFiles listFiles) {
                     System.out.println(listFiles);
@@ -78,6 +115,17 @@ public class ChatController implements Initializable {
     // post init fx fields
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        setAuthenticated(false);
+        try {
+            // создается новый клиент, который подключается к "localhost" и c портом=8189
+            network = new Network(8189);
+            Thread readThread = new Thread(this::readLoop);
+            readThread.setDaemon(true);
+            readThread.start();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
 
         // создаем в clientView столбец с определением файл это или директория
         TableColumn<FileInfo, String> fileTypeColumn = new TableColumn<>();
@@ -126,7 +174,6 @@ public class ChatController implements Initializable {
             disksBox.getItems().add(p.toString());
         }
         disksBox.getSelectionModel().select(0);
-// кликаем мышью и входим наверх
         clientView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -149,30 +196,20 @@ public class ChatController implements Initializable {
                         if (Files.isDirectory(Path.of(path))) {
                             System.out.println(path);
                             network.write(new PathInRequest(path));
-                        }else {
+                        } else {
                             Alert alert = new Alert(Alert.AlertType.WARNING, "Открывать файлы еще не умеем", ButtonType.OK);
                             alert.showAndWait();
                         }
                     } catch (IOException e) {
-                    e.printStackTrace();
+                        e.printStackTrace();
                     }
                 }
             }
         });
-
-
         updateList(Paths.get("."));
-        try {
-            // создается новый клиент, который подключается к "localhost" и c портом=8189
-            network = new Network(8189);
-            Thread readThread = new Thread(this::readLoop);
-            readThread.setDaemon(true);
-            readThread.start();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
 
     }
+
 
     public void updateList(Path path) {
         try {
@@ -192,12 +229,6 @@ public class ChatController implements Initializable {
         assert list != null;
         return Arrays.asList(list);
     }
-
-//    public void upload(ActionEvent actionEvent) throws IOException {
-//        String file = (clientView.getSelectionModel().getSelectedItem().getFilename());
-//        System.out.println(file);
-//        network.write(new FileMessage(Path.of("C:\\Users\\anasonov\\IdeaProjects\\Cloud\\geek-cloud-2022-june-master\\server_files").resolve(file)));
-//    }
 
     public void upload(ActionEvent actionEvent) throws IOException {
         Path path = Paths.get(pathField.getText()).resolve(clientView.getSelectionModel().getSelectedItem().getFilename());
@@ -221,7 +252,7 @@ public class ChatController implements Initializable {
         }
     }
 
-    public void btnPathUpRequestServer(ActionEvent actionEvent){
+    public void btnPathUpRequestServer(ActionEvent actionEvent) {
         String path = String.valueOf(Path.of(pathFieldServer.getText()).getParent());
         System.out.println(path);
         try {
@@ -242,4 +273,9 @@ public class ChatController implements Initializable {
     }
 
 
+    public void tryToAuth(ActionEvent actionEvent) throws IOException {
+        String login = loginField.getText();
+        String password = passwordField.getText();
+        network.write(new Authentification(login, password));
+    }
 }

@@ -1,7 +1,7 @@
 package com.geekbrains.cloud;
 
 public class ChangePathServerRequest implements CloudMessage {
-    private String path;
+    private final String path;
     public ChangePathServerRequest(String path) {
         this.path=path;
     }
