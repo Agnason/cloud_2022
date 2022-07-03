@@ -14,8 +14,24 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
 
     private Path serverStorage;
 
+    private Path rootDir=Paths.get("server_files#1").toAbsolutePath();
+
+    public String getNick() {
+        return nick;
+    }
+
+    public void setNick(String nick) {
+        this.nick = nick;
+    }
+
+    private String nick;
+
+    private AuthService authService;
+
+
     public CloudFileHandler() {
-        serverStorage = Paths.get("server_files").toAbsolutePath();
+        serverStorage = Paths.get("server_files#1").toAbsolutePath();
+
 
     }
 
@@ -23,27 +39,46 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
         ctx.writeAndFlush(new ListFiles(serverStorage));
+
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, CloudMessage cloudMessage) throws Exception {
+        if (!SQLHandler.connect()) {
+            throw new RuntimeException("Не удалось подключить к БД");
+        }
+        authService=new DBAuthService();
+
+        if(cloudMessage instanceof Reg reg) {
+
+           if(authService.registration(reg.login, reg.password, reg.nick)){
+               System.out.println("GOOD");
+           }
+        }
+
+
         if (cloudMessage instanceof Authentification authentification) {
-            SimpleAuthService simpleAuthService=new SimpleAuthService();
-            String nickname = simpleAuthService
+            if (!SQLHandler.connect()) {
+                throw new RuntimeException("Не удалось подключить к БД");
+            }
+            authService = new DBAuthService();
+
+            String nickname = authService
                     .getNicknameByLoginAndPassword(authentification.login, authentification.password);
-            if( nickname !=null){
+            if (nickname != null) {
+
                 ctx.writeAndFlush(new Authentification(true));
                 ctx.writeAndFlush(new FileRequest(nickname));
-            }else {
+
+            } else {
                 ctx.writeAndFlush(new Authentification(false));
             }
-
         }
 
         // сигнал от сервера на загрузку файла с сервера на клиент
         if (cloudMessage instanceof FileRequest fileRequest) {
             ctx.writeAndFlush(new FileMessage(serverStorage.resolve(fileRequest.getName())));
-            System.out.println(serverStorage.resolve(fileRequest.getName()));
+            System.out.println(serverStorage.resolve(fileRequest.getName())+"FileRequestToClient");
         }
         // сигнал от клиента на загрузку файла с клиента на сервер
         if (cloudMessage instanceof FileMessage fileMessage) {
@@ -54,15 +89,18 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
         if (cloudMessage instanceof PathInRequest pathInRequest) {
             Path resolve = serverStorage.resolve(Path.of(pathInRequest.getPathIn()));
             ctx.writeAndFlush(new ListFiles(resolve));
-            System.out.println(resolve);
         }
         // навигаци на сервере. Выходим на родителя
         if (cloudMessage instanceof PathUpRequest pathUpRequest) {
-
-            ctx.writeAndFlush(new ListFiles(Path.of(pathUpRequest.getPathUp())));
+            if (!rootDir.getParent().equals(Path.of(pathUpRequest.getPathUp()))) {
+                System.out.println(rootDir);
+                System.out.println(pathUpRequest.getPathUp());
+                ctx.writeAndFlush(new ListFiles(Path.of(pathUpRequest.getPathUp())));
+            }
         }
         if (cloudMessage instanceof ChangePathServerRequest changePathServerRequest) {
-            serverStorage=Paths.get(changePathServerRequest.getPath());
+            serverStorage = Paths.get(changePathServerRequest.getPath());
         }
     }
+
 }

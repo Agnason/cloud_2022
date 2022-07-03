@@ -7,10 +7,15 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -29,14 +35,10 @@ public class ChatController implements Initializable {
     public ComboBox<String> disksBox;// выбор диска
     @FXML
     public TextField pathField; // прописка пути файла
-
     @FXML
     public TableView<FileInfo> clientView;// поле клиента
-
     @FXML
     public TextField pathFieldServer;
-    @FXML
-    public HBox authPanel;
     @FXML
     public TextField loginField;
     @FXML
@@ -46,34 +48,26 @@ public class ChatController implements Initializable {
     @FXML
     public HBox btnPanel;
     @FXML
-    public TextField nick;
-
-    // флаг-авторизация. По умолчанияю false. Засунем в initialize
-    private String nickname;
+    public TextField clientInfo;
+    @FXML
+    public AnchorPane authPanel;
+    @FXML
+    public Button regBtn;
+    public Stage stage;
+    public ListView<String> serverView;
+    public Network network;
     private boolean authenticated;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
         authPanel.setVisible(!authenticated);
         authPanel.setManaged(!authenticated);
+        clientInfo.setVisible(authenticated);
+        clientInfo.setManaged(authenticated);
         cloudPanel.setVisible(authenticated);
         cloudPanel.setManaged(authenticated);
         btnPanel.setVisible(authenticated);
-        nick.setVisible(authenticated);
-//        if (!authenticated) {
-//            nickname = "";
-//        }
     }
-
-    // флаг-авторизация
-
-    private AuthService authService;
-    private String homeDir;
-    private String server;
-
-    public ListView<String> serverView;
-
-    private Network network;
 
     private void readLoop() {
         try {
@@ -84,11 +78,16 @@ public class ChatController implements Initializable {
                     if (authentification.isFlag()) {
                         setAuthenticated(true);
                     }
-                }
-                if (message instanceof FileRequest fileRequest) {
-                    nick.setText(fileRequest.getName());
+                    if (!authentification.isFlag()) {
+                        loginField.setText("Неверные логин/пароль");
+
+                    }
                 }
 
+                if (message instanceof FileRequest fileRequest) {
+                    Date currentDate = new Date();
+                    clientInfo.setText(String.format("Здравствуйте %s. Вы зашли в облако %s", fileRequest.getName(), currentDate));
+                }
 
                 if (message instanceof ListFiles listFiles) {
                     System.out.println(listFiles);
@@ -100,7 +99,7 @@ public class ChatController implements Initializable {
 
                 } else if (message instanceof FileMessage fileMessage) {
                     Path current = Path.of(pathField.getText()).resolve(fileMessage.getName());
-                    System.out.println(current);
+                    System.out.println(current+"Chatcontoller");
                     Files.write(current, fileMessage.getData());
                     Platform.runLater(() -> {
                         updateList(current.getParent());
@@ -115,15 +114,18 @@ public class ChatController implements Initializable {
     // post init fx fields
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        setAuthenticated(false);
+
         try {
             // создается новый клиент, который подключается к "localhost" и c портом=8189
+            setAuthenticated(false);
             network = new Network(8189);
+
             Thread readThread = new Thread(this::readLoop);
             readThread.setDaemon(true);
             readThread.start();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
 
@@ -238,6 +240,7 @@ public class ChatController implements Initializable {
 
     public void download(ActionEvent actionEvent) throws IOException {
         String file = (serverView.getSelectionModel().getSelectedItem());
+        network.write(new ChangePathServerRequest(pathFieldServer.getText()));
         network.write(new FileRequest(file));
     }
 
@@ -254,7 +257,6 @@ public class ChatController implements Initializable {
 
     public void btnPathUpRequestServer(ActionEvent actionEvent) {
         String path = String.valueOf(Path.of(pathFieldServer.getText()).getParent());
-        System.out.println(path);
         try {
             network.write(new PathUpRequest(path));
         } catch (IOException e) {
@@ -274,8 +276,24 @@ public class ChatController implements Initializable {
 
 
     public void tryToAuth(ActionEvent actionEvent) throws IOException {
-        String login = loginField.getText();
-        String password = passwordField.getText();
+        String login = loginField.getText().trim();
+        String password = passwordField.getText().trim();
         network.write(new Authentification(login, password));
+    }
+
+    public void tryToReg(ActionEvent actionEvent) {
+        regBtn.getScene().getWindow().hide();
+        FXMLLoader loader = new FXMLLoader();
+        loader.setLocation(getClass().getResource("reg-view.fxml"));
+        try {
+            loader.load();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Parent root = loader.getRoot();
+        stage = new Stage();
+        stage.setScene(new Scene(root));
+        stage.showAndWait();
+
     }
 }

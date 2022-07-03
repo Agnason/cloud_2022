@@ -64,9 +64,9 @@ public class FileInfo {
             this.size = Files.size(path);
             this.type = Files.isDirectory(path) ? FileType.DIRECTORY : FileType.FILE;
             if (this.type == FileType.DIRECTORY) {
-                this.size = - 1L;
+                this.size = -1L;
             }
-            this.lastModified=LocalDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneOffset.ofHours(0));
+            this.lastModified = LocalDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneOffset.ofHours(0));
         } catch (
                 IOException e) {
             throw new RuntimeException("Unable to create file info from path");
