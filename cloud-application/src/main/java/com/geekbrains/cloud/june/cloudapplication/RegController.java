@@ -8,10 +8,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -30,20 +27,20 @@ public class RegController implements Initializable {
     private TextField passwordReg;
     @FXML
     public TextField nickReg;
-
+    @FXML
+    public Button registrBtn;
     private Network network;
     private Stage stage;
-
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
         try {
-        network = new Network(8189);
-        Thread readThread = new Thread(this::readLoop);
-        readThread.setDaemon(true);
-        readThread.start();
+            network = new Network(8189);
+            Thread readThread = new Thread(this::readLoop);
+            readThread.setDaemon(true);
+            readThread.start();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -58,7 +55,7 @@ public class RegController implements Initializable {
                 CloudMessage message = network.read();
 
                 if (message instanceof Authentification authentification) {
-                    if (authentification.isFlag()){
+                    if (authentification.isFlag()) {
 
                     }
                 }
@@ -75,6 +72,8 @@ public class RegController implements Initializable {
         String password = passwordReg.getText().trim();
         String nick = nickReg.getText().trim();
         network.write(new Reg(login, password, nick));
+        //почему-то потом не активны поля login и password в hello-view.fxml
+        // registrBtn.getScene().getWindow().hide();
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("hello-view.fxml"));
         try {

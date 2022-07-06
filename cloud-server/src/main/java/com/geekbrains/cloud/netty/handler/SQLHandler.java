@@ -7,6 +7,7 @@ public class SQLHandler {
     private static PreparedStatement psGetNickname;
     private static PreparedStatement psRegistration;
     private static PreparedStatement psChangeNick;
+    private static PreparedStatement psGetId;
 
 
     public static boolean connect() {
@@ -26,6 +27,7 @@ public class SQLHandler {
         psGetNickname = connection.prepareStatement("SELECT nickname FROM users WHERE login = ? AND password = ?;");
         psRegistration = connection.prepareStatement("INSERT INTO users (login, password, nickname) VALUES (?,?,?);");
         psChangeNick = connection.prepareStatement("UPDATE users SET nickname=? WHERE nickname=?;");
+        psGetId = connection.prepareStatement("SELECT id FROM users WHERE login = ? AND password = ?;");
     }
 
     public static String getNicknameByLoginAndPassword(String login, String password) {
@@ -42,6 +44,21 @@ public class SQLHandler {
             e.printStackTrace();
         }
         return nick;
+    }
+    public static Integer getIdByLoginAndPassword(String login, String password) {
+        Integer id = null;
+        try {
+            psGetId.setString(1, login);
+            psGetId.setString(2, password);
+            ResultSet rs = psGetId.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return id;
     }
 
     public static boolean registration(String login, String password, String nickname) {

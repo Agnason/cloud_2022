@@ -7,6 +7,9 @@ public interface AuthService {
      * @return nickname если учетка найдена
      * */
     String getNicknameByLoginAndPassword(String login, String password);
+    Integer getIdByLoginAndPassword(String login, String password);
+
+
 
     /**
      * метод для регистрации учетной записи

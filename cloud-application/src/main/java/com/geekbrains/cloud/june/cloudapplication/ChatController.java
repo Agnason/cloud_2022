@@ -231,13 +231,13 @@ public class ChatController implements Initializable {
         assert list != null;
         return Arrays.asList(list);
     }
-
+    @FXML
     public void upload(ActionEvent actionEvent) throws IOException {
         Path path = Paths.get(pathField.getText()).resolve(clientView.getSelectionModel().getSelectedItem().getFilename());
         network.write(new ChangePathServerRequest(pathFieldServer.getText()));
         network.write(new FileMessage(path));
     }
-
+    @FXML
     public void download(ActionEvent actionEvent) throws IOException {
         String file = (serverView.getSelectionModel().getSelectedItem());
         network.write(new ChangePathServerRequest(pathFieldServer.getText()));
@@ -264,7 +264,7 @@ public class ChatController implements Initializable {
         }
     }
 
-
+    @FXML
     public void btnExitAction(ActionEvent actionEvent) {
         Platform.exit();
     }
@@ -274,13 +274,13 @@ public class ChatController implements Initializable {
         return pathField.getSelectedText();
     }
 
-
+    @FXML
     public void tryToAuth(ActionEvent actionEvent) throws IOException {
         String login = loginField.getText().trim();
         String password = passwordField.getText().trim();
         network.write(new Authentification(login, password));
     }
-
+    @FXML
     public void tryToReg(ActionEvent actionEvent) {
         regBtn.getScene().getWindow().hide();
         FXMLLoader loader = new FXMLLoader();
@@ -295,5 +295,29 @@ public class ChatController implements Initializable {
         stage.setScene(new Scene(root));
         stage.showAndWait();
 
+    }
+    @FXML
+    public void tryToDelete(ActionEvent actionEvent) {
+        try {
+            if(clientView.isFocused()) {
+                Path path = Paths.get(pathField.getText()).resolve(clientView.getSelectionModel().getSelectedItem().getFilename());
+                Files.delete(path);
+                updateList(Paths.get(pathField.getText()));
+            }else if (serverView.isFocused()) {
+                Path pathServer=Path.of(pathFieldServer.getText()).resolve(serverView.getSelectionModel().getSelectedItem());
+                Files.delete(pathServer);
+                ListFiles listFiles=new ListFiles(Path.of(pathFieldServer.getText()));
+                Platform.runLater(() -> {
+                    serverView.getItems().clear();
+                    serverView.getItems().addAll(listFiles.getFiles());
+                    pathFieldServer.setText(listFiles.getPath());
+                });
+            }
+
+
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "По какой-то причине не удалось удалить файл", ButtonType.OK);
+            alert.showAndWait();
+        }
     }
 }

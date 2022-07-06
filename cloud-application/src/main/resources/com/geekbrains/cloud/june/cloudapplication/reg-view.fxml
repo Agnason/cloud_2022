@@ -15,7 +15,7 @@
                   <Font name="Nirmala UI" size="16.0" />
                </font>
             </TextField>
-            <Button layoutX="258.0" layoutY="230.0" mnemonicParsing="false" onAction="#tryToAuth" prefHeight="41.0" prefWidth="183.0" style="-fx-background-color: #F39C63;" text="Зарегистрировать" textFill="WHITE">
+            <Button fx:id="registrBtn" layoutX="258.0" layoutY="230.0" mnemonicParsing="false" onAction="#tryToAuth" prefHeight="41.0" prefWidth="183.0" style="-fx-background-color: #F39C63;" text="Зарегистрировать" textFill="WHITE">
                <font>
                   <Font name="Nirmala UI" size="17.0" />
                </font>

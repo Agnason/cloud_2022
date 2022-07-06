@@ -74,7 +74,7 @@
     <HBox fx:id="btnPanel" spacing="5.0">
         <Button focusTraversable="false" maxWidth="Infinity" onAction="#upload" text="ToServer" HBox.hgrow="ALWAYS" />
         <Button focusTraversable="false" maxWidth="Infinity" onAction="#download" text="FromServer" HBox.hgrow="ALWAYS" />
-        <Button focusTraversable="false" maxWidth="Infinity" text="Delete" HBox.hgrow="ALWAYS" />
+        <Button focusTraversable="false" maxWidth="Infinity" onAction="#tryToDelete" text="Delete" HBox.hgrow="ALWAYS" />
         <Button focusTraversable="false" maxWidth="Infinity" onAction="#btnExitAction" text="Exit" HBox.hgrow="ALWAYS" />
         <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

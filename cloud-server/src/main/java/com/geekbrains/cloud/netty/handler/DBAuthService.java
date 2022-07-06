@@ -8,6 +8,11 @@ public class DBAuthService implements AuthService {
     }
 
     @Override
+    public Integer getIdByLoginAndPassword(String login, String password) {
+        return SQLHandler.getIdByLoginAndPassword(login, password);
+    }
+
+    @Override
     public boolean registration(String login, String password, String nickname) {
         return SQLHandler.registration(login, password, nickname);
 
