@@ -45,7 +45,7 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
-       // ctx.writeAndFlush(new ListFiles(serverStorage));
+        // ctx.writeAndFlush(new ListFiles(serverStorage));
 
     }
 
@@ -74,6 +74,10 @@ public class CloudFileHandler extends SimpleChannelInboundHandler<CloudMessage> 
             Integer id = authService.getIdByLoginAndPassword(authentification.login, authentification.password);
             setRootDir(Paths.get("server_files#" + id).toAbsolutePath());
             serverStorage = getRootDir();
+            // создаем рабочее пространство клиента
+
+            Files.createDirectories(serverStorage);
+
 
             // получаем путь к индивидуальной  папке пользователя
 
